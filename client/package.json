@@ -9,7 +9,9 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+
+    "a11y-fix": "pnpm exec tsx ./src/scripts/a11y-fix.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
@@ -31,7 +33,9 @@
     "@vitest/coverage-v8": "latest",
     "oxlint": "^1.90.0",
     "playwright": "latest",
+    "recast": "0.23.21",
     "storybook": "^10.6.7",
+    "tsx": "^4.23.15",
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vitest": "latest"
