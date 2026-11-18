@@ -32,7 +32,7 @@ export const extractArgsFromCommand = (): CommandArgOptions => {
             throw new Error(`Invalid --n "${values.n}". Expected a number.`);
         }
 
-        if(repeatNumber < 1 && repeatNumber > 5) {
+        if(repeatNumber < 1 || repeatNumber > 5) {
             throw new Error(`Invalid --n "${values.n}". Must be 1-5.`);
         }
     }
@@ -40,7 +40,7 @@ export const extractArgsFromCommand = (): CommandArgOptions => {
     return {
         model: values.model,
         files: values.files ?? [],
-        type: type,
+        type: type ?? "code-only",
         repeatNumber: repeatNumber,
     }
 }

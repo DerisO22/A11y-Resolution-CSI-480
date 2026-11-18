@@ -1,0 +1,143 @@
+{
+    "id": "forms-login-form-unclean",
+    "category": "unclean",
+    "componentType": "form",
+    "source": "authored",
+    "usageContext": "Sign-in form on an account login page.",
+    "files": {
+        "original": "dataset/forms/login-form-unclean/LoginForm.original.tsx",
+        "working": "src/components/login-form-unclean/LoginForm.tsx",
+        "stories": "src/components/login-form-unclean/LoginForm.stories.tsx"
+    },
+    "storyTitle": "Forms/LoginForm",
+    "states": [
+        "Default",
+        "SubmittedInvalid"
+    ],
+    "checks": [
+        "Default_FieldLabels",
+        "Default_PasswordToggleKeyboard",
+        "SubmittedInvalid_ErrorsLinked",
+        "SubmittedInvalid_FocusFirstError"
+    ],
+    "contract": {
+        "export": "LoginForm",
+        "props": [
+            "onSubmit"
+        ],
+        "testIds": [
+            "login-email",
+            "login-email-error",
+            "login-password",
+            "login-password-error",
+            "login-password-toggle",
+            "login-remember",
+            "login-submit"
+        ]
+    },
+    "violations": [
+        {
+            "id": "V1",
+            "description": "Email input is labelled only by its placeholder.",
+            "wcag": [
+                "3.3.2"
+            ],
+            "axeRule": null,
+            "detectedBy": "check",
+            "check": "Default_FieldLabels",
+            "states": [
+                "Default",
+                "SubmittedInvalid"
+            ],
+            "note": "axe's label rule accepts a placeholder as an accessible name, so axe passes this."
+        },
+        {
+            "id": "V2",
+            "description": "Password input has no label.",
+            "wcag": [
+                "4.1.2",
+                "1.3.1"
+            ],
+            "axeRule": "label",
+            "detectedBy": "axe+check",
+            "check": "Default_FieldLabels",
+            "states": [
+                "Default",
+                "SubmittedInvalid"
+            ]
+        },
+        {
+            "id": "V3",
+            "description": "'Remember me' text is not associated with its checkbox.",
+            "wcag": [
+                "4.1.2",
+                "1.3.1"
+            ],
+            "axeRule": "label",
+            "detectedBy": "axe+check",
+            "check": "Default_FieldLabels",
+            "states": [
+                "Default",
+                "SubmittedInvalid"
+            ]
+        },
+        {
+            "id": "V4",
+            "description": "'Forgot password?' link text #a0a0a0 on #ffffff (about 2.6:1).",
+            "wcag": [
+                "1.4.3"
+            ],
+            "axeRule": "color-contrast",
+            "detectedBy": "axe",
+            "check": null,
+            "states": [
+                "Default",
+                "SubmittedInvalid"
+            ]
+        },
+        {
+            "id": "V5",
+            "description": "Show-password toggle is a span with onClick: not focusable, no role, no accessible name.",
+            "wcag": [
+                "2.1.1",
+                "4.1.2"
+            ],
+            "axeRule": null,
+            "detectedBy": "check",
+            "check": "Default_PasswordToggleKeyboard",
+            "states": [
+                "Default",
+                "SubmittedInvalid"
+            ],
+            "note": "If a fix turns it into a button without a name, axe's button-name rule will then report it."
+        },
+        {
+            "id": "V6",
+            "description": "Error messages are not linked to their fields and fields are not marked aria-invalid.",
+            "wcag": [
+                "3.3.1",
+                "1.3.1"
+            ],
+            "axeRule": null,
+            "detectedBy": "check",
+            "check": "SubmittedInvalid_ErrorsLinked",
+            "states": [
+                "SubmittedInvalid"
+            ]
+        },
+        {
+            "id": "V7",
+            "description": "Focus stays on the submit button after a failed submit.",
+            "wcag": [
+                "3.3.1"
+            ],
+            "axeRule": null,
+            "detectedBy": "check",
+            "check": "SubmittedInvalid_FocusFirstError",
+            "states": [
+                "SubmittedInvalid"
+            ],
+            "note": "Best practice for error recovery rather than a strict success-criterion failure; consider reporting it separately."
+        }
+    ]
+}
