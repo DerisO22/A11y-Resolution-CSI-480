@@ -1,5 +1,10 @@
+import { extractArgsFromCommand } from "./extractArgsFromCommand";
+
+
 export const A11yFix = () => {
-    console.log("Hello bro");
+    const testOptions = extractArgsFromCommand();
+    
+    console.log("Options: \n", testOptions);
 }
 
 A11yFix();
