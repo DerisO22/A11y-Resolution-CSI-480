@@ -1,0 +1,160 @@
+import { useState, type CSSProperties, type FormEvent } from 'react';
+
+export interface LoginFormValues {
+    email: string;
+    password: string;
+    remember: boolean;
+}
+
+export interface LoginFormProps {
+    onSubmit?: (values: LoginFormValues) => void;
+}
+
+type FieldErrors = Partial<Record<'email' | 'password', string>>;
+
+const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
+
+export const LoginForm = ({ onSubmit }: LoginFormProps) => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [remember, setRemember] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [errors, setErrors] = useState<FieldErrors>({});
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        const nextErrors: FieldErrors = {};
+        if (!email) nextErrors.email = 'Enter your email';
+        else if (!EMAIL_PATTERN.test(email)) nextErrors.email = 'Enter a valid email';
+        if (!password) nextErrors.password = 'Enter your password';
+
+        setErrors(nextErrors);
+        if (Object.keys(nextErrors).length === 0) {
+            onSubmit?.({ email, password, remember });
+        }
+    };
+
+    return (
+        <form onSubmit={handleSubmit} noValidate style={styles.form}>
+            <h2 style={styles.heading}>Sign in</h2>
+
+            <div style={styles.field}>
+                <label style={styles.label}>Email</label>
+                <input
+                    data-testid="login-email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={{ ...styles.input, ...(errors.email ? styles.inputError : null) }}
+                />
+                {errors.email && (
+                    <div data-testid="login-email-error" style={styles.error}>
+                        {errors.email}
+                    </div>
+                )}
+            </div>
+
+            <div style={styles.field}>
+                <div style={styles.passwordRow}>
+                    <label style={styles.label}>Password</label>
+                    <input
+                        data-testid="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        style={{
+                            ...styles.input,
+                            ...styles.passwordInput,
+                            ...(errors.password ? styles.inputError : null),
+                        }}
+                    />
+                    <span
+                        data-testid="login-password-toggle"
+                        onClick={() => setShowPassword((visible) => !visible)}
+                        style={styles.toggle}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </span>
+                </div>
+                {errors.password && (
+                    <div data-testid="login-password-error" style={styles.error}>
+                        {errors.password}
+                    </div>
+                )}
+            </div>
+
+            <div style={styles.row}>
+                <span style={styles.checkboxGroup}>
+                    <input
+                        data-testid="login-remember"
+                        type="checkbox"
+                        checked={remember}
+                        onChange={(e) => setRemember(e.target.checked)}
+                    />
+                    <label style={styles.label}>Remember me</label>
+                </span>
+                <a href="#forgot-password" style={styles.link}>
+                    Forgot password?
+                </a>
+            </div>
+
+            <button data-testid="login-submit" type="submit" style={styles.submit}>
+                Sign in
+            </button>
+        </form>
+    );
+};
+
+const styles: Record<string, CSSProperties> = {
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        width: 320,
+        padding: 24,
+        background: '#ffffff',
+        color: '#1f1f1f',
+        fontFamily: 'system-ui, sans-serif',
+        border: '1px solid #e0e0e0',
+        borderRadius: 8,
+    },
+    heading: { margin: 0, fontSize: 22 },
+    field: { display: 'flex', flexDirection: 'column', gap: 4 },
+    input: {
+        padding: '10px 12px',
+        fontSize: 15,
+        border: '1px solid #c4c4c4',
+        borderRadius: 6,
+    },
+    inputError: { borderColor: '#c5221f' },
+    passwordRow: { position: 'relative', display: 'flex' },
+    passwordInput: { flex: 1, paddingRight: 40 },
+    toggle: {
+        position: 'absolute',
+        right: 10,
+        top: '50%',
+        transform: 'translateY(-50%)',
+        display: 'flex',
+        color: '#5f6368',
+        cursor: 'pointer',
+    },
+    error: { color: '#c5221f', fontSize: 13 },
+    label: { fontSize: 15 },
+    row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 14 },
+    checkboxGroup: { display: 'flex', alignItems: 'center', gap: 6 },
+    link: { color: '#a0a0a0', fontSize: 14 },
+    submit: {
+        padding: '10px 12px',
+        fontSize: 15,
+        color: '#ffffff',
+        background: '#1557b0',
+        border: 'none',
+        borderRadius: 6,
+        cursor: 'pointer',
+    },
+};

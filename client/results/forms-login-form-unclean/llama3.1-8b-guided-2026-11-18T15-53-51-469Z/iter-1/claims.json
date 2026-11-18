@@ -1,0 +1,83 @@
+[
+    {
+        "description": "The 'Forgot password?' link has insufficient color contrast.",
+        "wcag": [
+            "1.4.3"
+        ],
+        "element": "<a href=\"#forgot-password\" style=\"color: rgb(160, 160, 160); font-size: 14px;\">Forgot password?</a>",
+        "status": "fixed",
+        "finding": "color-contrast"
+    },
+    {
+        "description": "The password input field has no label.",
+        "wcag": [
+            "4.1.2"
+        ],
+        "element": "<input data-testid=\"login-password\" type=\"password\" value=\"\" style=\"padding: 10px 40px 10px 12px; font-size: 15px; border: 1px solid rgb(196, 196, 196); border-radius: 6px; flex: 1 1 0%;\">",
+        "status": "fixed",
+        "finding": "label"
+    },
+    {
+        "description": "The 'Remember me' checkbox has no label.",
+        "wcag": [
+            "4.1.2"
+        ],
+        "element": "<input data-testid=\"login-remember\" type=\"checkbox\">",
+        "status": "fixed",
+        "finding": "label"
+    },
+    {
+        "description": "Pressing Tab from the password field does not move focus to the show-password toggle.",
+        "wcag": [
+            "2.1.1"
+        ],
+        "element": "<input data-testid=\"login-password\" type=\"password\" value=\"\" style=\"padding: 10px 40px 10px 12px; font-size: 15px; border: 1px solid rgb(196, 196, 196); border-radius: 6px; flex: 1 1 0%;\">",
+        "status": "fixed",
+        "finding": "Default_PasswordToggleKeyboard"
+    },
+    {
+        "description": "After a failed submit, the email field is not marked aria-invalid=\"true\".",
+        "wcag": [
+            "3.3.1"
+        ],
+        "element": "<input data-testid=\"login-email\" type=\"email\" placeholder=\"Email\" value=\"\" onChange={(e) => setEmail(e.target.value)} style={{ ...styles.input, ...(errors.email ? styles.inputError : null) }}>",
+        "status": "fixed",
+        "finding": "SubmittedInvalid_ErrorsLinked"
+    },
+    {
+        "description": "After a failed submit, the email error message is not referenced by the email field's aria-describedby or aria-errormessage.",
+        "wcag": [
+            "3.3.1"
+        ],
+        "element": "<input data-testid=\"login-email\" type=\"email\" placeholder=\"Email\" value=\"\" onChange={(e) => setEmail(e.target.value)} style={{ ...styles.input, ...(errors.email ? styles.inputError : null) }}>",
+        "status": "fixed",
+        "finding": "SubmittedInvalid_ErrorsLinked"
+    },
+    {
+        "description": "After a failed submit, the password field is not marked aria-invalid=\"true\".",
+        "wcag": [
+            "3.3.1"
+        ],
+        "element": "<input data-testid=\"login-password\" type=\"password\" value=\"\" onChange={(e) => setPassword(e.target.value)} style={{ ...styles.input, ...styles.passwordInput, ...(errors.password ? styles.inputError : null), }}>",
+        "status": "fixed",
+        "finding": "SubmittedInvalid_ErrorsLinked"
+    },
+    {
+        "description": "After a failed submit, the password error message is not referenced by the password field's aria-describedby or aria-errormessage.",
+        "wcag": [
+            "3.3.1"
+        ],
+        "element": "<input data-testid=\"login-password\" type=\"password\" value=\"\" onChange={(e) => setPassword(e.target.value)} style={{ ...styles.input, ...styles.passwordInput, ...(errors.password ? styles.inputError : null), }}>",
+        "status": "fixed",
+        "finding": "SubmittedInvalid_ErrorsLinked"
+    },
+    {
+        "description": "After a failed submit, focus does not move to the first invalid field (email).",
+        "wcag": [
+            "2.1.1"
+        ],
+        "element": "<input data-testid=\"login-email\" type=\"email\" placeholder=\"Email\" value=\"\" onChange={(e) => setEmail(e.target.value)} style={{ ...styles.input, ...(errors.email ? styles.inputError : null) }}>",
+        "status": "fixed",
+        "finding": "SubmittedInvalid_FocusFirstError"
+    }
+]
