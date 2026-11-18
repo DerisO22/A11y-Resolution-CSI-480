@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
+    "ollama": "^0.6.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.5"
