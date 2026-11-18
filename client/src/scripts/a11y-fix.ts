@@ -37,8 +37,6 @@ import { scanStoryForIteration } from "./runner/scanStoryForIteration";
 
 export const A11yFix = async() => {
     const testOptions = extractArgsFromCommand();
-    
-    console.log("Chosen Run Options: \n", testOptions, "\n");
 
     const annotation = await readAnnotation(testOptions.files[0]);
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
