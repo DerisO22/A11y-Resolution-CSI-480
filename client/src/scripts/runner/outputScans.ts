@@ -1,26 +1,17 @@
-import type { CommandArgOptions } from "../../types/command-options";
 import type { IterationScan } from "../../types/runner";
 
-export const outputScanOverview = (baseline: IterationScan, testOptions: CommandArgOptions) => {
-    const unreachedStates = baseline.states.filter((state) => state.status !== "passed");
-    const failedChecks = baseline.checks.filter((check) => check.status === "failed");
+export const outputScanOverview = (scan: IterationScan): void => {
+    const label = scan.iteration === 0 ? "Baseline" : `Iteration ${scan.iteration} scan`;
+    const failedChecks = scan.checks.filter((check) => check.status === "failed");
+    const unreachedStates = scan.states.filter((state) => state.status !== "passed");
 
     console.log(
-        `Baseline for ${baseline.annotationId} (${Math.round(baseline.durationMs)} ms): ` +
-            `${baseline.mergedViolations.length} axe violations, ` +
-            `${failedChecks.length}/${baseline.checks.length} checks failing. Results: ${baseline.resultsDir}`,
+        `${label} for ${scan.annotationId} (${Math.round(scan.durationMs)} ms): ` +
+            `${scan.mergedViolations.length} axe violations, ` +
+            `${failedChecks.length}/${scan.checks.length} checks failing. Results: ${scan.resultsDir}`,
     );
+
     for (const state of unreachedStates) {
-        console.warn(`Baseline could not reach state "${state.state}" (${state.status}): ${state.error ?? "no result"}`);
+        console.warn(`${label} could not reach state "${state.state}" (${state.status}): ${state.error ?? "no result"}`);
     }
-
-    const promptFindings =
-        testOptions.type === "guided" ? { violations: baseline.mergedViolations, failedChecks } : null;
-
-    if (promptFindings) {
-        console.log(
-            `Guided prompt will include ${promptFindings.violations.length} violations ` +
-                `and ${promptFindings.failedChecks.length} failing checks.`,
-        );
-    }
-}
+};

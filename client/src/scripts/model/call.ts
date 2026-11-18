@@ -52,7 +52,7 @@ export const promptModel = async (systemPrompt: string, userPrompt: string, mode
                 ],
                 options: {
                     temperature: 0,
-                    num_ctx: 16384,
+                    num_ctx: 16384, // Ollama silently drops anything past its small default context
                 },
             }),
         });
@@ -107,7 +107,7 @@ const parseModelOutput = (raw: string): { claims: Claim[]; code: string } => {
         throw new Error('The <claims> JSON has no "issues" array.');
     }
 
-    const code = stripFences(fileText);
+    const code = cleanCode(fileText);
     if (code === "") {
         throw new Error("The <file> block is empty.");
     }
@@ -124,6 +124,13 @@ const extractTag = (text: string, tag: string): string | null => {
     }
 
     return matches[matches.length - 1][1].trim();
+};
+
+// Small models sometimes echo the prompt's <source> tags or add code fences inside <file>
+const cleanCode = (fileText: string): string => {
+    const withoutSourceTags = fileText.trim().replace(/^<source>\s*/, "").replace(/\s*<\/source>$/, "");
+
+    return stripFences(withoutSourceTags);
 };
 
 const stripFences = (text: string): string => {

@@ -1,9 +1,92 @@
-import { access, mkdir, readFile, rm } from "node:fs/promises";
+import { access, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import type { Result } from "axe-core";
 import { storyNameFromExport, toId } from "storybook/internal/csf";
 
 import { runScan } from "./scan";
-import type { ScanAnnotation, ScanOptions, IterationScan, JestAssertion, StoryStatus, StateScan, CheckScan, AxeFile, JestReport, MergedViolation } from "../../types/runner";
+
+/** The parts of an annotation this step needs. Your full annotation object satisfies this. */
+export interface ScanAnnotation {
+    /** Used to name the results folder, e.g. "forms-login-form-unclean". */
+    id: string;
+    storyTitle: string;
+    states: string[];
+    checks: string[];
+    files: { stories: string };
+}
+
+export interface ScanOptions {
+    runId: string;
+    /** 0 = baseline scan of the original, 1..N = scan after each model write. */
+    iteration: number;
+    resultsRoot?: string;
+}
+
+/**
+ * passed  = the story rendered and its play function finished.
+ * failed  = render error or play function threw (for a state story: it couldn't be driven into that state).
+ * missing = the test-runner has no result for this story (filtered out, skipped, or the name doesn't match).
+ */
+export type StoryStatus = "passed" | "failed" | "missing";
+
+export interface StateScan {
+    state: string;
+    storyId: string;
+    status: StoryStatus;
+    error: string | null;
+    /** Only meaningful when status is "passed". Empty arrays on a failed state mean "no data", not "clean". */
+    violations: Result[];
+    incomplete: Result[];
+}
+
+export interface CheckScan {
+    check: string;
+    storyId: string;
+    status: StoryStatus;
+    /** The check story's failCheck message, cleaned up so it can go straight into a prompt. */
+    message: string | null;
+}
+
+export interface MergedViolation {
+    ruleId: string;
+    impact: string | null;
+    wcag: string[];
+    help: string;
+    target: string;
+    html: string;
+    states: string[];
+}
+
+export interface IterationScan {
+    annotationId: string;
+    runId: string;
+    iteration: number;
+    resultsDir: string;
+    durationMs: number;
+    /** Non-zero whenever any story fails, which is normal for unclean components. */
+    runnerExitCode: number;
+    /** Raw per-state results: store these in the DB and score fix rate from them. */
+    states: StateScan[];
+    checks: CheckScan[];
+    /** De-duplicated by rule + element across states: use this for the guided prompt. */
+    mergedViolations: MergedViolation[];
+}
+
+interface AxeFile {
+    violations: Result[];
+    incomplete: Result[];
+}
+
+interface JestAssertion {
+    ancestorTitles: string[];
+    title: string;
+    status: string;
+    failureMessages: string[];
+}
+
+interface JestReport {
+    testResults: Array<{ assertionResults: JestAssertion[] }>;
+}
 
 /**
  * Runs the test-runner once for a component's stories file, then gathers:
@@ -17,6 +100,7 @@ export const scanStoryForIteration = async (
     annotation: ScanAnnotation,
     { runId, iteration, resultsRoot = "results" }: ScanOptions,
 ): Promise<IterationScan> => {
+    // Fail with a clear message instead of the runner's "No tests found" when the annotation path is wrong.
     try {
         await access(annotation.files.stories);
     } catch {
@@ -26,10 +110,8 @@ export const scanStoryForIteration = async (
         );
     }
 
+    // Every runId has a timestamp, so this folder is new for each run; model output saved here beforehand is kept.
     const resultsDir = path.join(resultsRoot, annotation.id, runId, `iter-${iteration}`);
-
-    // Start from an empty folder so files from an earlier attempt can't be mistaken for this scan's results
-    await rm(resultsDir, { recursive: true, force: true });
     await mkdir(resultsDir, { recursive: true });
 
     const startedAt = performance.now();
@@ -57,13 +139,15 @@ export const scanStoryForIteration = async (
     };
 };
 
-// ────── Reading Results ────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* Reading results                                                     */
+/* ------------------------------------------------------------------ */
 
-
+/** Same ID the test-runner gives the story (and uses for the axe file name), e.g. forms-loginform--submitted-invalid. */
 const toStoryId = (storyTitle: string, exportName: string): string =>
     toId(storyTitle, storyNameFromExport(exportName));
 
-
+/** The test-runner nests each story's test as describe(title) > describe(exportName) > it("play-test" | "smoke-test"). */
 const findAssertion = (
     storyTitle: string,
     exportName: string,
@@ -73,7 +157,6 @@ const findAssertion = (
         (assertion) => assertion.ancestorTitles[0] === storyTitle && assertion.ancestorTitles[1] === exportName,
     );
 
-    
 const toStatus = (assertion: JestAssertion | undefined): StoryStatus => {
     if (!assertion) return "missing";
     if (assertion.status === "passed") return "passed";
@@ -136,6 +219,7 @@ const readJestReport = async (resultsDir: string): Promise<JestReport> => {
     try {
         return JSON.parse(await readFile(file, "utf8")) as JestReport;
     } catch (error) {
+        // No report at all means the runner itself failed, not a story.
         throw new Error(
             `The test-runner produced no JSON report (${file}). Check its output above: "No tests found" means ` +
                 `the stories path didn't match; a connection error means Storybook isn't running at STORYBOOK_URL.`,
@@ -162,8 +246,11 @@ const extractFailureMessage = (failureMessages: string[]): string => {
     return body.slice(0, end).trim();
 };
 
-// ────── Merging For Prompt ────────────────────────────────────────────────────────────────────────────────
+/* ------------------------------------------------------------------ */
+/* Merging for the prompt                                              */
+/* ------------------------------------------------------------------ */
 
+/** "wcag412" → "4.1.2", "wcag1410" → "1.4.10". Level tags like "wcag2aa" are dropped. */
 const toWcagCriteria = (tags: string[]): string[] =>
     tags
         .filter((tag) => /^wcag\d{3,}$/.test(tag))
@@ -172,6 +259,7 @@ const toWcagCriteria = (tags: string[]): string[] =>
             return `${digits[0]}.${digits[1]}.${digits.slice(2)}`;
         });
 
+/** One entry per rule + element. When the same issue appears in another state, that state is added to the entry. */
 const mergeViolations = (states: StateScan[]): MergedViolation[] => {
     const merged = states
         .filter((state) => state.status === "passed")
