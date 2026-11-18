@@ -1,7 +1,13 @@
+import { readFile } from "node:fs/promises";
 import { extractArgsFromCommand } from "./extractArgsFromCommand";
+import { promptModel } from "./model/call";
 import { readAnnotation } from "./readAnnotation";
+import { restoreFilesOnCompletion } from "./restoreOriginal";
 import { outputScanOverview } from "./runner/outputScans";
 import { scanStoryForIteration } from "./runner/scanStoryForIteration";
+import path from "node:path";
+import { buildUserPrompt } from "./prompt/buildUserPrompt";
+import { CODE_ONLY_SYSTEM_PROMPT, GUIDED_SYSTEM_PROMPT } from "../consts/prompts";
 
 /**
  *  Annotations will contain the paths to:
@@ -42,9 +48,34 @@ export const A11yFix = async() => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const runId = `${testOptions.model}-${testOptions.type ?? "no-type"}-${timestamp}`;
 
-    const baseline = await scanStoryForIteration(annotation, { runId, iteration: 0 });
+    let baseline = await scanStoryForIteration(annotation, { runId, iteration: 0 });
 
     outputScanOverview(baseline, testOptions);
+
+    try {
+        for(let i = 0; i < testOptions.repeatNumber!; i++) {
+            /**
+             *   We already did baseline scan so we gotta
+             *   build the prompts and make API calls first. Then re-scan.
+             */
+            const code = await readFile(path.resolve(annotation.files.working), "utf-8");
+            const isGuided = testOptions.type === "guided";
+
+            const systemPrompt = isGuided ? GUIDED_SYSTEM_PROMPT : CODE_ONLY_SYSTEM_PROMPT;
+            const userPrompt = buildUserPrompt(code, isGuided ? baseline : undefined);
+            
+            const output = await promptModel(systemPrompt, userPrompt, testOptions.model);
+
+            console.log("Model Output and Metrics: \n\n", output);
+            
+            // baseline = await scanStoryForIteration(annotation, { runId, iteration: i + 1 }); 
+        }
+    } finally {
+        // restoreFilesOnCompletion({
+        //     editablePath: annotation.files.working, 
+        //     originalPath: annotation.files.original
+        // });
+    }
 }
 
 A11yFix();
